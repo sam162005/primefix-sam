@@ -20,33 +20,53 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
       const res = await fetch("http://localhost:4000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
         setError(data.error || "Login failed");
         return;
       }
-
+  
       // Save token & user data to localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
+  
+      // 🔥 Add this part for users array:
+      const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
+  
+      const newUser = {
+        id: data.user._id || Date.now(), // Use _id from backend or Date.now() as fallback
+        name: data.user.name || "No Name",
+        email: data.user.email || "No Email",
+        registeredAt: new Date().toLocaleString(),
+        status: "Pending",
+        refund: false,
+      };
+  
+      // Check if user already exists (by email)
+      const exists = storedUsers.some(u => u.email === newUser.email);
+      if (!exists) {
+        storedUsers.push(newUser);
+        localStorage.setItem("users", JSON.stringify(storedUsers));
+      }
+  
       alert("Login successful!");
       navigate("/TechnicianSidebar"); // ✅ Change route as needed
-
+  
     } catch (err) {
       console.error("Login Error:", err);
       setError("Something went wrong. Please try again.");
     }
   };
+  
 
   return (
     <div className="login-container1">

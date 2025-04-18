@@ -14,37 +14,55 @@ import {
   MenuItem,
   TextField,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import { toast } from "react-toastify";
 import "./ServiceRequests.css";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = "http://localhost:4000";
 
 const ServiceRequests = () => {
   const [requests, setRequests] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchRequests();
+    fetchTechnicians();
   }, []);
 
-  // Fetch service requests from API
   const fetchRequests = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get("https://your-api.com/service-requests");
-      setRequests(response.data);
+      const response = await axios.get(`${API_URL}/api/serviceRequests`);
+      console.log("Service Requests:", response.data);
+      setRequests(response.data.appointments || []);
     } catch (error) {
-      console.error("Error fetching requests:", error);
-      toast.error("Failed to fetch service requests");
+      console.error("Error fetching service requests:", error);
+      toast.error("Failed to fetch service requests.");
+    }
+    setLoading(false);
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/technicians/approved`);
+      setTechnicians(response.data);
+    } catch (error) {
+      console.error("Error fetching technicians:", error);
+      toast.error("Failed to fetch technicians.");
     }
   };
 
-  // Handle Status Change
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (requestId, newStatus) => {
     try {
-      await axios.put(`https://your-api.com/service-requests/${id}`, { status: newStatus });
-      toast.success("Status updated successfully!");
+      await axios.put(`${API_URL}/api/serviceRequests/${requestId}/status`, {
+        status: newStatus,
+      });
+      toast.success("Service status updated!");
       fetchRequests();
     } catch (error) {
       console.error("Error updating status:", error);
@@ -52,15 +70,25 @@ const ServiceRequests = () => {
     }
   };
 
-  // Handle Technician Assignment
-  const assignTechnician = async (id, technician) => {
+  const assignTechnician = async (requestId, technicianId) => {
     try {
-      await axios.put(`https://your-api.com/service-requests/${id}/assign`, { technician });
+      await axios.put(`${API_URL}/api/serviceRequests/${requestId}/assign`, { technicianId });
       toast.success("Technician assigned successfully!");
       fetchRequests();
     } catch (error) {
       console.error("Error assigning technician:", error);
       toast.error("Failed to assign technician.");
+    }
+  };
+
+  const cancelRequest = async (requestId) => {
+    try {
+      await axios.delete(`${API_URL}/api/serviceRequests/${requestId}`);
+      toast.success("Service request cancelled.");
+      fetchRequests();
+    } catch (error) {
+      console.error("Error cancelling request:", error);
+      toast.error("Failed to cancel request.");
     }
   };
 
@@ -70,83 +98,114 @@ const ServiceRequests = () => {
         Service Requests
       </Typography>
 
-      {/* Search & Filter Section */}
+      {/* Search & Filter */}
       <div className="search-filter-container">
         <TextField
-          label="Search Requests"
+          label="Search by Address"
           variant="outlined"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          sx={{ mr: 2 }}
         />
         <Select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
           displayEmpty
+          size="small"
         >
           <MenuItem value="">All Statuses</MenuItem>
           <MenuItem value="Pending">Pending</MenuItem>
           <MenuItem value="In Progress">In Progress</MenuItem>
           <MenuItem value="Completed">Completed</MenuItem>
+          <MenuItem value="Cancelled">Cancelled</MenuItem>
         </Select>
       </div>
 
-      {/* Table */}
-      <TableContainer component={Paper} className="table-container">
-        <Table>
-          <TableHead className="table-header">
-            <TableRow>
-              <TableCell><b>Customer</b></TableCell>
-              <TableCell><b>Service Type</b></TableCell>
-              <TableCell><b>Status</b></TableCell>
-              <TableCell><b>Technician</b></TableCell>
-              <TableCell><b>Payment</b></TableCell>
-              <TableCell><b>Actions</b></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {requests
-              .filter((req) =>
-                req.customer.toLowerCase().includes(search.toLowerCase()) &&
-                (filterStatus ? req.status === filterStatus : true)
-              )
-              .map((req) => (
-                <TableRow key={req.id}>
-                  <TableCell className="table-cell">{req.customer}</TableCell>
-                  <TableCell className="table-cell">{req.serviceType}</TableCell>
-                  <TableCell className="table-cell">
+      {loading ? (
+        <div className="loading-container">
+          <CircularProgress />
+        </div>
+      ) : (
+        <TableContainer component={Paper} className="table-container">
+          <Table>
+            <TableHead className="table-header">
+              <TableRow>
+                <TableCell><b>Address</b></TableCell>
+                <TableCell><b>Services</b></TableCell>
+                <TableCell><b>Total</b></TableCell>
+                <TableCell><b>Date</b></TableCell>
+                <TableCell><b>Status</b></TableCell>
+                <TableCell><b>Technician</b></TableCell>
+                <TableCell><b>Actions</b></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(Array.isArray(requests) ? requests : [])
+                .filter((req) =>
+                  req.address && req.address.toLowerCase().includes(search.toLowerCase()) &&
+                  (filterStatus ? req.status === filterStatus : true)
+                )
+                .map((req) => (
+                  <TableRow key={req._id}>
+                    <TableCell>{req.address}</TableCell>
+                    <TableCell>
+                      {req.services.map((service) => (
+                        <div key={service._id}>
+                          {service.name} (₹{service.price})
+                        </div>
+                      ))}
+                    </TableCell>
+                    <TableCell>₹{req.total}</TableCell>
+                    <TableCell>{new Date(req.date).toLocaleString()}</TableCell>
+                    <TableCell>
                     <Select
-                      value={req.status}
-                      onChange={(e) => handleStatusChange(req.id, e.target.value)}
-                      className="status-select"
-                    >
-                      <MenuItem value="Pending">Pending</MenuItem>
-                      <MenuItem value="In Progress">In Progress</MenuItem>
-                      <MenuItem value="Completed">Completed</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="table-cell">
+  value={req.status}
+  onChange={(e) => handleStatusChange(req._id, e.target.value)}
+  size="small"
+  className="status-select"
+  sx={{ color: "white" }}
+>
+
+                        <MenuItem value="Pending">Pending</MenuItem>
+                        <MenuItem value="In Progress">In Progress</MenuItem>
+                        <MenuItem value="Completed">Completed</MenuItem>
+                        <MenuItem value="Cancelled">Cancelled</MenuItem>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
                     <Select
-                      value={req.technician || ""}
-                      onChange={(e) => assignTechnician(req.id, e.target.value)}
-                      displayEmpty
-                      className="technician-select"
-                    >
-                      <MenuItem value="">Assign</MenuItem>
-                      <MenuItem value="John Doe">John Doe</MenuItem>
-                      <MenuItem value="Jane Smith">Jane Smith</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell className={`table-cell ${req.paymentStatus === "Paid" ? "payment-paid" : "payment-unpaid"}`}>
-                    {req.paymentStatus}
-                  </TableCell>
-                  <TableCell className="table-cell">
-                    <Button className="cancel-button">Cancel</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+  value={req.assignedTechnicianId || ""}
+  onChange={(e) => assignTechnician(req._id, e.target.value)}
+  displayEmpty
+  size="small"
+  className="technician-select"
+  sx={{ color: "white" }}
+>
+                        <MenuItem value="">Assign Technician</MenuItem>
+                        {technicians.map((tech) => (
+                          <MenuItem key={tech._id} value={tech._id}>
+                            {tech.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => cancelRequest(req._id)}
+                      >
+                        Cancel
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Container>
   );
 };

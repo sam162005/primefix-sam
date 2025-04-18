@@ -72,21 +72,40 @@
   }
   
   /* Dropdown (Status, Technician) */
-  .status-select, .technician-select {
-    width: 160px;
-    background: #333;
-    color: white;
-    padding: 8px;
-    border-radius: 5px;
-    border: 1px solid #555;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  
-  .status-select:hover, .technician-select:hover {
-    background: #444;
-  }
-  
+  /* Status and Technician Dropdown Styles */
+.status-select, .technician-select {
+  width: 160px;
+  background: #333;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #555;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Make selected text white */
+.status-select .MuiSelect-select, .technician-select .MuiSelect-select {
+  color: white;
+}
+
+/* Menu items inside dropdown */
+.MuiMenuItem-root {
+  background: #333;
+  color: white;
+}
+
+/* Highlight on hover */
+.MuiMenuItem-root:hover {
+  background: #444;
+}
+
+/* For the selected menu item */
+.Mui-selected {
+  background-color: #555 !important;
+  color: white;
+}
+
   /* Payment Status */
   .payment-paid {
     color: #0f0;

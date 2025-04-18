@@ -10,10 +10,13 @@ const app = express();
 // Routes
 const earningsRoute = require("./routes/EarningsRoute");
 const technicianRoutes = require('./routes/technicianRoutes');  // Authentication-related routes
-const technicianAdminRoutes = require('./routes/technicianAdminRoutes');  // Admin-related routes
-
+const technicianAdminRoutes = require('./routes/technicianAdminRoutes');
+const appointmentsRoute = require('./routes/adminServiceRequests');  // Admin-related routes
+const appointments = require('./routes/appointmentRoute');
 // Models
 const Technician = require('./models/Technician');
+const User = require('./models/User'); 
+
 
 // ✅ Middleware
 app.use(express.json());
@@ -22,7 +25,9 @@ app.use(cors());
 // ✅ Routes
 app.use("/api/earnings", earningsRoute);
 app.use('/api/technician', technicianRoutes);  // Technician registration/login
-app.use('/api/admin/technicians', technicianAdminRoutes);  // Admin managing technician requests
+app.use('/api/admin/technicians', technicianAdminRoutes); 
+app.use('/api/serviceRequests', appointmentsRoute); 
+app.use('/api/appointments', appointments);// Admin managing technician requests
 
 
 
@@ -40,7 +45,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
 });
-const User = mongoose.model("User", UserSchema);
+
 
 // ✅ MongoDB Connection
 mongoose
@@ -201,6 +206,40 @@ app.post("/api/login", async (req, res) => {
   } catch (error) {
     console.error("❌ User Login Error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ✅ Get all Approved Technicians
+app.get("/api/technicians/approved", async (req, res) => {
+  try {
+    const approvedTechnicians = await Technician.find({ status: "Approved" }).select("-password -verificationCode"); 
+    // Selecting all fields except password and verificationCode for security
+    res.json(approvedTechnicians);
+  } catch (err) {
+    console.error("❌ Fetch Approved Technicians Error:", err);
+    res.status(500).json({ error: "Server error while fetching approved technicians" });
+  }
+});
+app.get('/api/serviceRequests', async (req, res) => {
+  try {
+    const serviceRequests = await ServiceRequest.find(); // Or whatever query you're using
+    res.json({ appointments: serviceRequests });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching service requests.' });
+  }
+});
+
+// Add this route to your Express app
+
+// ✅ Fetch all users from the database
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find();  // fetch all users
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Server Error' });
   }
 });
 
