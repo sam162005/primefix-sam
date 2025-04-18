@@ -9,7 +9,8 @@ const app = express();
 
 // Routes
 const earningsRoute = require("./routes/EarningsRoute");
-const technicianRoutes = require("./routes/technicianRoutes");
+const technicianRoutes = require('./routes/technicianRoutes');  // Authentication-related routes
+const technicianAdminRoutes = require('./routes/technicianAdminRoutes');  // Admin-related routes
 
 // Models
 const Technician = require('./models/Technician');
@@ -20,8 +21,9 @@ app.use(cors());
 
 // ✅ Routes
 app.use("/api/earnings", earningsRoute);
+app.use('/api/technician', technicianRoutes);  // Technician registration/login
+app.use('/api/admin/technicians', technicianAdminRoutes);  // Admin managing technician requests
 
-app.use("/api/technician", technicianRoutes);
 
 
 // ✅ Admin Schema & Model

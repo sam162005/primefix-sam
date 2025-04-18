@@ -7,7 +7,7 @@ const TechnicianRequestPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:4000/api/technician-requests/requests"; // FIXED ✅
+  const API_URL = "http://localhost:4000/api/admin/technicians/requests"; // FIXED ✅
 
   useEffect(() => {
     fetchTechnicianRequests();
@@ -39,7 +39,7 @@ const TechnicianRequestPage = () => {
   const handleApprove = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:4000/api/technician-requests/approve/${id}`, {}, { // FIXED ✅
+      await axios.put(`http://localhost:4000/api/admin/technicians/approve/${id}`, {}, { // FIXED ✅
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("Technician approved.");
@@ -53,7 +53,7 @@ const TechnicianRequestPage = () => {
   const handleReject = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:4000/api/technician-requests/reject/${id}`, {}, { // FIXED ✅
+      await axios.put(`http://localhost:4000/api/admin/technicians/reject/${id}`, {}, { // FIXED ✅
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("Technician rejected.");
